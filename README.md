@@ -1,0 +1,1 @@
+Generate synthetic image for image segmentation deep learning model
