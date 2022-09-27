@@ -89,3 +89,17 @@ def generate_synthetic_img(bg_img: Image.Image, obj_img: Image.Image):
 
     bg_resized.save(output_generated_image_path)
     result_bg.save(output_generated_mask)
+
+
+img = Image.open('train/id-cards/jpn-license-1.png')
+m = -0.5
+w, h = img.size
+xshift = abs(m) * img.width
+shear_x = int(round(xshift))
+new_w = w + int(round(xshift))
+M = utils.get_pil_perspective_transform([(0, 0), (w, 0), (w, h), (0, h)], [
+                                        (0, 100), (w, 0), (new_w, h-100), (shear_x, h)])
+
+img_transformed = img.transform((new_w, h), Image.Transform.PERSPECTIVE,
+                                M, Image.Resampling.BICUBIC)
+img_transformed.show()

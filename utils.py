@@ -1,5 +1,11 @@
 import time
-import numpy
+from typing import Any
+import numpy as np
+import cv2
+
+
+def get_cv2_perspective_transform(src: cv2.Mat, dst: cv2.Mat) -> Any:
+    return cv2.getPerspectiveTransform(src, dst)
 
 
 def current_ms() -> int:
@@ -14,14 +20,14 @@ def calculate_coordinates(bg_size: tuple[int, int], obj_size: tuple[int, int]) -
     return (x_range, y_range)
 
 
-def find_coeffs(pa, pb):
+def get_pil_perspective_transform(src, dst):
     matrix = []
-    for p1, p2 in zip(pa, pb):
-        matrix.append([p1[0], p1[1], 1, 0, 0, 0, -p2[0]*p1[0], -p2[0]*p1[1]])
-        matrix.append([0, 0, 0, p1[0], p1[1], 1, -p2[1]*p1[0], -p2[1]*p1[1]])
-
-    A = numpy.matrix(matrix, dtype=numpy.float)
-    B = numpy.array(pb).reshape(8)
-
-    res = numpy.dot(numpy.linalg.inv(A.T * A) * A.T, B)
-    return numpy.array(res).reshape(8)
+    for p1, p2 in zip(dst, src):
+        matrix.append([p1[0], p1[1], 1, 0, 0, 0,
+                       -p2[0]*p1[0], -p2[0]*p1[1]])
+        matrix.append([0, 0, 0, p1[0], p1[1], 1,
+                       -p2[1]*p1[0], -p2[1]*p1[1]])
+    A = np.matrix(matrix, dtype=np.float)
+    B = np.array(src).reshape(8)
+    res = np.dot(np.linalg.inv(A.T * A) * A.T, B)
+    return np.array(res).reshape(8)
