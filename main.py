@@ -1,16 +1,21 @@
 from os import path
-from PIL import Image
+from PIL import Image, ImageDraw
 import random
 import utils
+import json
 
 BG_WIDH = 1060
 BG_HEIGHT = 706
-BG_PATH = 'train/backgrounds'
-ID_CARD_PATH = 'train/id-cards'
-OUTPUT_IMAGE_PATH = 'train/generated-images'
-OUTPUT_MASK_PATH = 'train/masks'
+BG_PATH = "train/backgrounds"
+ID_CARD_PATH = "train/id-cards"
+OUTPUT_IMAGE_PATH = "train/generated-images"
+OUTPUT_MASK_PATH = "train/masks"
+GROUND_TRUTH_DIR = "ground_truth"
 CARD_SAMPLE_WIDTH = 1280
 CARD_SAMPLE_HEIGHT = 814
+DATASET_PREFIX = ["DG", "DX", "LG", "LX"]
+VERSION = 31
+COUNT_ITEM = 30
 
 
 def load_bg_img(bg_name: str) -> Image.Image:
@@ -55,7 +60,7 @@ def show_img(img: Image.Image) -> None:
 
 
 def create_color_bg(bg_size: tuple[int, int], bg_color: tuple[int, int, int] = (0, 0, 0)) -> Image.Image:
-    bg_with_color = Image.new('RGB', size=bg_size, color=bg_color)
+    bg_with_color = Image.new("RGB", size=bg_size, color=bg_color)
     return bg_with_color
 
 
@@ -91,15 +96,33 @@ def generate_synthetic_img(bg_img: Image.Image, obj_img: Image.Image):
     result_bg.save(output_generated_mask)
 
 
-img = Image.open('train/id-cards/jpn-license-1.png')
-m = -0.5
-w, h = img.size
-xshift = abs(m) * img.width
-shear_x = int(round(xshift))
-new_w = w + int(round(xshift))
-M = utils.get_pil_perspective_transform([(0, 0), (w, 0), (w, h), (0, h)], [
-                                        (0, 100), (w, 0), (new_w, h-100), (shear_x, h)])
+def get_ground_truth_quad(file_name: str):
+    json_file_path = path.join(GROUND_TRUTH_DIR, f"{file_name}.json")
+    json_file = open(json_file_path)
+    data = json.load(json_file)
+    xy = []
+    for xy_item in data["quad"]:
+        xy.append(tuple(xy_item))
+    json_file.close()
+    return xy
 
-img_transformed = img.transform((new_w, h), Image.Transform.PERSPECTIVE,
-                                M, Image.Resampling.BICUBIC)
-img_transformed.show()
+
+def create_data_sample(prefix: str, file_name: str):
+    orig_img = Image.open(f"import/{prefix}/{file_name}.tif")
+    bg_img = create_color_bg(bg_size=orig_img.size)
+    xy = get_ground_truth_quad(f"{prefix}/{file_name}")
+    d = ImageDraw.Draw(bg_img)
+    d.polygon(xy, fill=(255, 255, 255))
+    orig_img.save(f"dataset/{file_name}.png")
+    bg_img.save(f"mask/{file_name}.png")
+
+
+def load_dataset():
+    for prefix in DATASET_PREFIX:
+        for i in range(1, COUNT_ITEM + 1):
+            print(f"Loading data sample {i} ...")
+            create_data_sample(
+                prefix=prefix, file_name=f"{prefix}{VERSION}_{i:02d}")
+
+
+load_dataset()
