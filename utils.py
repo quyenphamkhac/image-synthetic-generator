@@ -13,10 +13,10 @@ def current_ms() -> int:
 
 
 def calculate_coordinates(bg_size: tuple[int, int], obj_size: tuple[int, int]) -> tuple[tuple[int, int], tuple[int, int]]:
-    bg_x, bg_y = bg_size
-    obj_x, obj_y = obj_size
-    x_range = (0, int(bg_x - obj_x))
-    y_range = (0, int(bg_y - obj_y))
+    bg_w, bg_h = bg_size
+    obj_w, obj_h = obj_size
+    x_range = (0, int(bg_w - obj_w))
+    y_range = (0, int(bg_h - obj_h))
     return (x_range, y_range)
 
 

@@ -3,6 +3,7 @@ from PIL import Image, ImageDraw
 import random
 import utils
 import json
+from pathlib import Path
 
 BG_PATH = "train/backgrounds"
 ID_CARD_PATH = "train/id-cards"
@@ -14,6 +15,9 @@ CARD_SAMPLE_HEIGHT = 814
 DATASET_PREFIX = ["DG", "DX", "LG", "LX"]
 VERSION = 31
 COUNT_ITEM = 30
+DELTA = 15
+SCALE_MIN = 40
+SCALE_MAX = 60
 
 
 def load_bg_img(bg_name: str) -> Image.Image:
@@ -65,7 +69,7 @@ def create_color_bg(bg_size: tuple[int, int], bg_color: tuple[int, int, int] = (
 def choose_new_obj_size(bg_size: tuple[int, int], orig_obj_size: tuple[int, int]) -> tuple[int, int]:
     bg_width, _ = bg_size
     org_obj_width, org_obj_height = orig_obj_size
-    scale_ratio = random.randint(20, 50) / 100
+    scale_ratio = random.randint(SCALE_MIN, SCALE_MAX) / 100
     new_width = int(scale_ratio * bg_width)
     new_height = int((new_width / org_obj_width) * org_obj_height)
 
@@ -79,14 +83,14 @@ def random_rotate_angle() -> int:
 
 def random_transform_perspective(img: Image.Image) -> Image.Image:
     w, h = img.size
-    random_x1 = int(round((random.randint(0, 15) / 100) * w))
-    random_y1 = int(round((random.randint(0, 15) / 100) * h))
-    random_x2 = int(round((random.randint(0, 15) / 100) * w))
-    random_y2 = int(round((random.randint(0, 15) / 100) * h))
-    random_x3 = int(round((random.randint(0, 15) / 100) * w))
-    random_y3 = int(round((random.randint(0, 15) / 100) * h))
-    random_x4 = int(round((random.randint(0, 15) / 100) * w))
-    random_y4 = int(round((random.randint(0, 15) / 100) * h))
+    random_x1 = int(round((random.randint(0, DELTA) / 100) * w))
+    random_y1 = int(round((random.randint(0, DELTA) / 100) * h))
+    random_x2 = int(round((random.randint(0, DELTA) / 100) * w))
+    random_y2 = int(round((random.randint(0, DELTA) / 100) * h))
+    random_x3 = int(round((random.randint(0, DELTA) / 100) * w))
+    random_y3 = int(round((random.randint(0, DELTA) / 100) * h))
+    random_x4 = int(round((random.randint(0, DELTA) / 100) * w))
+    random_y4 = int(round((random.randint(0, DELTA) / 100) * h))
     xy = [(0, 0), (w, 0), (w, h), (0, h)]
     new_xy = [(random_x1, random_y1), (w+random_x2, random_y2),
               (w+random_x3, h+random_y3), (random_x4, h+random_y4)]
@@ -99,7 +103,7 @@ def random_transform_perspective(img: Image.Image) -> Image.Image:
     return new_img
 
 
-def generate_synthetic_img(bg_img: Image.Image, obj_img: Image.Image):
+def generate_synthetic_img(bg_img: Image.Image, obj_img: Image.Image, output_name: str):
     bg_img_size = bg_img.size
 
     bg_resized = resize_img(img=bg_img, new_size=bg_img_size)
@@ -129,11 +133,10 @@ def generate_synthetic_img(bg_img: Image.Image, obj_img: Image.Image):
     bg_resized.paste(obj_resized, coordinates, mask=obj_resized)
     result_bg.paste(result_mask, coordinates, mask=result_mask)
 
-    current_time_ms = utils.current_ms()
     output_generated_image_path = path.join(
-        OUTPUT_IMAGE_PATH, f"{current_time_ms}.jpeg")
+        OUTPUT_IMAGE_PATH, f"{output_name}.png")
     output_generated_mask = path.join(
-        OUTPUT_MASK_PATH, f"{current_time_ms}.png")
+        OUTPUT_MASK_PATH, f"{output_name}.png")
 
     bg_resized.save(output_generated_image_path)
     result_bg.save(output_generated_mask)
@@ -168,7 +171,24 @@ def load_dataset():
                 prefix=prefix, file_name=f"{prefix}{VERSION}_{i:02d}")
 
 
-bg_img = Image.open("train/backgrounds/table/table_07.png")
-obj_img = Image.open("train/jpn_driver_license/jpn_license_01.png")
+def generate_bulk_data(num_data: int, bg_path: str, output_prefix: str, obj_path: str):
+    bg_images = [str(p) for p in Path(bg_path).glob("*.png")]
+    obj_images = [str(p) for p in Path(obj_path).glob("*.png")]
 
-generate_synthetic_img(bg_img=bg_img, obj_img=obj_img)
+    for i in range(1, num_data + 1):
+        print(f"Generating data {i:02d} ...")
+        random_bg = random.choice(bg_images)
+        random_obj = random.choice(obj_images)
+        random_bg_img = Image.open(random_bg)
+        random_obj_img = Image.open(random_obj)
+        generate_synthetic_img(
+            bg_img=random_bg_img, obj_img=random_obj_img, output_name=f"{output_prefix}_{i:02d}")
+
+
+# bg_img = Image.open("train/backgrounds/table/table_07.png")
+# obj_img = Image.open("train/jpn_driver_license/jpn_license_01.png")
+# bg_images = [str(p) for p in Path("train/backgrounds/table").glob("*.png")]
+# print(str(random.choice(bg_images)))
+
+generate_bulk_data(num_data=5, bg_path="train/backgrounds/table",
+                   obj_path="train/jpn_driver_license", output_prefix="TABLE")
