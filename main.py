@@ -4,12 +4,10 @@ import random
 import utils
 import json
 
-BG_WIDH = 1060
-BG_HEIGHT = 706
 BG_PATH = "train/backgrounds"
 ID_CARD_PATH = "train/id-cards"
-OUTPUT_IMAGE_PATH = "train/generated-images"
-OUTPUT_MASK_PATH = "train/masks"
+OUTPUT_IMAGE_PATH = "export/data_sample"
+OUTPUT_MASK_PATH = "export/ground_truth"
 GROUND_TRUTH_DIR = "ground_truth"
 CARD_SAMPLE_WIDTH = 1280
 CARD_SAMPLE_HEIGHT = 814
@@ -64,18 +62,63 @@ def create_color_bg(bg_size: tuple[int, int], bg_color: tuple[int, int, int] = (
     return bg_with_color
 
 
-def generate_synthetic_img(bg_img: Image.Image, obj_img: Image.Image):
-    bg_img_size = (BG_WIDH, BG_HEIGHT)
-    obj_img_size = (int(CARD_SAMPLE_WIDTH / 4), int(CARD_SAMPLE_HEIGHT / 4))
+def choose_new_obj_size(bg_size: tuple[int, int], orig_obj_size: tuple[int, int]) -> tuple[int, int]:
+    bg_width, _ = bg_size
+    org_obj_width, org_obj_height = orig_obj_size
+    scale_ratio = random.randint(20, 50) / 100
+    new_width = int(scale_ratio * bg_width)
+    new_height = int((new_width / org_obj_width) * org_obj_height)
 
-    bg_resized = resize_img(image=bg_img, new_size=bg_img_size)
+    return (new_width, new_height)
+
+
+def random_rotate_angle() -> int:
+    rotate_angle = random.randint(0, 360)
+    return rotate_angle
+
+
+def random_transform_perspective(img: Image.Image) -> Image.Image:
+    w, h = img.size
+    random_x1 = int(round((random.randint(0, 15) / 100) * w))
+    random_y1 = int(round((random.randint(0, 15) / 100) * h))
+    random_x2 = int(round((random.randint(0, 15) / 100) * w))
+    random_y2 = int(round((random.randint(0, 15) / 100) * h))
+    random_x3 = int(round((random.randint(0, 15) / 100) * w))
+    random_y3 = int(round((random.randint(0, 15) / 100) * h))
+    random_x4 = int(round((random.randint(0, 15) / 100) * w))
+    random_y4 = int(round((random.randint(0, 15) / 100) * h))
+    xy = [(0, 0), (w, 0), (w, h), (0, h)]
+    new_xy = [(random_x1, random_y1), (w+random_x2, random_y2),
+              (w+random_x3, h+random_y3), (random_x4, h+random_y4)]
+    M = utils.get_pil_perspective_transform(xy, new_xy)
+
+    delta_x = random_x1 + random_x2 + random_x3 + random_x4
+    delta_y = random_y1 + random_y2 + random_y3 + random_y4
+    new_img = img.transform(
+        (w + delta_x, h + delta_y), Image.Transform.PERSPECTIVE, M, Image.Resampling.BICUBIC)
+    return new_img
+
+
+def generate_synthetic_img(bg_img: Image.Image, obj_img: Image.Image):
+    bg_img_size = bg_img.size
+
+    bg_resized = resize_img(img=bg_img, new_size=bg_img_size)
     result_bg = create_color_bg(bg_size=bg_img_size)
 
-    obj_resized = resize_img(image=obj_img, new_size=obj_img_size)
+    obj_transformed = random_transform_perspective(obj_img)
+    rotate_angle = random_rotate_angle()
+
+    obj_rotated = obj_transformed.rotate(rotate_angle, expand=True)
+
+    obj_img_size = choose_new_obj_size(
+        bg_size=bg_img_size, orig_obj_size=obj_rotated.size)
+
+    obj_resized = resize_img(img=obj_rotated, new_size=obj_img_size)
+
     result_mask = get_img_mask(obj_resized)
 
     x_range, y_range = utils.calculate_coordinates(
-        bg_size=bg_img_size, obj_size=obj_img_size)
+        bg_size=bg_img_size, obj_size=obj_resized.size)
 
     x_min, x_max = x_range
     y_min, y_max = y_range
@@ -113,8 +156,8 @@ def create_data_sample(prefix: str, file_name: str):
     xy = get_ground_truth_quad(f"{prefix}/{file_name}")
     d = ImageDraw.Draw(bg_img)
     d.polygon(xy, fill=(255, 255, 255))
-    orig_img.save(f"dataset/{file_name}.png")
-    bg_img.save(f"mask/{file_name}.png")
+    orig_img.save(f"export/data_sample/{file_name}.png")
+    bg_img.save(f"export/ground_truth/{file_name}.png")
 
 
 def load_dataset():
@@ -125,4 +168,7 @@ def load_dataset():
                 prefix=prefix, file_name=f"{prefix}{VERSION}_{i:02d}")
 
 
-load_dataset()
+bg_img = Image.open("train/backgrounds/table/table_07.png")
+obj_img = Image.open("train/jpn_driver_license/jpn_license_01.png")
+
+generate_synthetic_img(bg_img=bg_img, obj_img=obj_img)
