@@ -20,6 +20,7 @@ COUNT_ITEM = 30
 DELTA = 15
 SCALE_MIN = 40
 SCALE_MAX = 60
+SUPPORTED_IMG_EXTENSIONS = ['png', 'jpeg', 'jpg']
 
 
 def load_bg_img(bg_name: str) -> Image.Image:
@@ -171,8 +172,16 @@ def load_dataset():
 
 
 def generate_bulk_data(num_data: int, bg_path: str, output_prefix: str, obj_path: str, out_dir: str):
-    bg_images = [str(p) for p in Path(bg_path).glob('*.png')]
-    obj_images = [str(p) for p in Path(obj_path).glob('*.png')]
+    bg_images = []
+    obj_images = []
+    for ext in SUPPORTED_IMG_EXTENSIONS:
+        bg_ext_images = [str(p) for p in Path(bg_path).glob(f'*.{ext}')]
+        obj_ext_images = [str(p) for p in Path(obj_path).glob(f'*.{ext}')]
+        bg_images += bg_ext_images
+        obj_images += obj_ext_images
+
+    if len(bg_images) == 0 or len(obj_images) == 0:
+        raise Exception("Sorry, no images in dir")
 
     for i in range(1, num_data + 1):
         print(f'Generating data {i:02d} ...')
