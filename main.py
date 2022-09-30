@@ -20,7 +20,7 @@ COUNT_ITEM = 30
 DELTA = 15
 SCALE_MIN = 40
 SCALE_MAX = 60
-BRIGHTNESS_REDUCE_RANGE = (0, 50)
+BRIGHTNESS_RANGE = (50, 100)
 SUPPORTED_IMG_EXTENSIONS = ['png', 'jpeg', 'jpg']
 
 
@@ -142,7 +142,7 @@ def generate_synthetic_img(bg_img: Image.Image, obj_img: Image.Image, output_nam
 
     # enhance original image
     enhancer = ImageEnhance.Brightness(bg_resized)
-    brightness_reduce_min, brightness_reduce_max = BRIGHTNESS_REDUCE_RANGE
+    brightness_reduce_min, brightness_reduce_max = BRIGHTNESS_RANGE
     brightness_reduce_ratio = random.randint(
         brightness_reduce_min, brightness_reduce_max) / 100
     img_enhanced = enhancer.enhance(brightness_reduce_ratio)
