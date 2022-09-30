@@ -3,4 +3,5 @@ ground_truth
 import
 mask
 export
+generated
 .venv
