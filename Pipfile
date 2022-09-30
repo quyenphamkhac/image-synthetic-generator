@@ -9,6 +9,7 @@ pandas = "*"
 numpy = "*"
 opencv-python = "*"
 matplotlib = "*"
+argparse = "*"
 
 [dev-packages]
 
