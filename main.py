@@ -1,5 +1,5 @@
 from os import path
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageEnhance
 import random
 import utils
 import json
@@ -20,6 +20,7 @@ COUNT_ITEM = 30
 DELTA = 15
 SCALE_MIN = 40
 SCALE_MAX = 60
+BRIGHTNESS_REDUCE_RANGE = (0, 50)
 SUPPORTED_IMG_EXTENSIONS = ['png', 'jpeg', 'jpg']
 
 
@@ -139,7 +140,14 @@ def generate_synthetic_img(bg_img: Image.Image, obj_img: Image.Image, output_nam
     bg_resized.paste(obj_resized, coordinates, mask=obj_resized)
     result_bg.paste(result_mask, coordinates, mask=result_mask)
 
-    bg_resized.save(f"{out_dir}/data_sample/{output_name}.png")
+    # enhance original image
+    enhancer = ImageEnhance.Brightness(bg_resized)
+    brightness_reduce_min, brightness_reduce_max = BRIGHTNESS_REDUCE_RANGE
+    brightness_reduce_ratio = random.randint(
+        brightness_reduce_min, brightness_reduce_max) / 100
+    img_enhanced = enhancer.enhance(brightness_reduce_ratio)
+
+    img_enhanced.save(f"{out_dir}/data_sample/{output_name}.png")
     result_bg.save(f"{out_dir}/ground_truth/{output_name}.png")
 
 
@@ -205,7 +213,7 @@ def main():
                         help='input object directory path')
     parser.add_argument('--img-prefix', metavar='PREFIX', required=True,
                         help='output images name prefix')
-    parser.add_argument('--out-dir', type=str, metavar='OUTPUT', default='export',
+    parser.add_argument('--out-dir', type=str, metavar='OUTPUT', default='generated',
                         help='output directory path')
     args = parser.parse_args()
     if not len(sys.argv) > 1:
