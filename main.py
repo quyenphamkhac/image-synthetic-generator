@@ -110,7 +110,7 @@ def random_transform_perspective(img: Image.Image) -> Image.Image:
     return new_img
 
 
-def generate_synthetic_img(bg_img: Image.Image, obj_img: Image.Image, output_name: str, out_dir: str):
+def generate_synthetic_img(bg_img: Image.Image, obj_img: Image.Image, output_name: str, out_dir: str, out_put_img_size=(128, 128)):
     bg_img_size = bg_img.size
 
     bg_resized = resize_img(img=bg_img, new_size=bg_img_size)
@@ -147,8 +147,11 @@ def generate_synthetic_img(bg_img: Image.Image, obj_img: Image.Image, output_nam
         brightness_reduce_min, brightness_reduce_max) / 100
     img_enhanced = enhancer.enhance(brightness_reduce_ratio)
 
-    img_enhanced.save(f"{out_dir}/data_sample/{output_name}.png")
-    result_bg.save(f"{out_dir}/ground_truth/{output_name}.png")
+    data_sample = resize_img(img=img_enhanced, new_size=out_put_img_size)
+    mask = resize_img(img=result_bg, new_size=out_put_img_size)
+
+    data_sample.save(f"{out_dir}/data/{output_name}.png")
+    mask.save(f"{out_dir}/mask/{output_name}.png")
 
 
 def get_ground_truth_quad(file_name: str):
@@ -198,7 +201,7 @@ def generate_bulk_data(num_data: int, bg_path: str, output_prefix: str, obj_path
         random_bg_img = Image.open(random_bg)
         random_obj_img = Image.open(random_obj)
         generate_synthetic_img(
-            bg_img=random_bg_img, obj_img=random_obj_img, output_name=f'{output_prefix}_{i:02d}', out_dir=out_dir)
+            bg_img=random_bg_img, obj_img=random_obj_img, output_name=f'{output_prefix}{i:05d}', out_dir=out_dir)
 
 
 def main():
