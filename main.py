@@ -17,10 +17,10 @@ CARD_SAMPLE_HEIGHT = 814
 DATASET_PREFIX = ['DG', 'DX', 'LG', 'LX']
 VERSION = 31
 COUNT_ITEM = 30
-DELTA = 15
-SCALE_MIN = 90
+DELTA = 10
+SCALE_MIN = 70
 SCALE_MAX = 95
-BRIGHTNESS_RANGE = (50, 100)
+BRIGHTNESS_RANGE = (30, 150)
 SUPPORTED_IMG_EXTENSIONS = ['png', 'jpeg', 'jpg']
 
 
@@ -84,7 +84,7 @@ def choose_new_obj_size(bg_size: tuple[int, int], orig_obj_size: tuple[int, int]
 
 
 def random_rotate_angle() -> int:
-    rotate_angle = random.randint(0, 360)
+    rotate_angle = random.randint(0, 20)
     return rotate_angle
 
 
@@ -117,12 +117,12 @@ def generate_synthetic_img(bg_img: Image.Image, obj_img: Image.Image, output_nam
     result_bg = create_color_bg(bg_size=bg_img_size)
 
     obj_transformed = random_transform_perspective(obj_img)
-    # rotate_angle = random_rotate_angle()
+    rotate_angle = random_rotate_angle()
 
-    # obj_rotated = obj_transformed.rotate(rotate_angle, expand=True)
+    obj_rotated = obj_transformed.rotate(rotate_angle, expand=True)
 
     obj_img_size = choose_new_obj_size(
-        bg_size=bg_img_size, orig_obj_size=obj_transformed.size)
+        bg_size=bg_img_size, orig_obj_size=obj_rotated.size)
 
     obj_resized = resize_img(img=obj_transformed, new_size=obj_img_size)
 
@@ -147,11 +147,11 @@ def generate_synthetic_img(bg_img: Image.Image, obj_img: Image.Image, output_nam
         brightness_reduce_min, brightness_reduce_max) / 100
     img_enhanced = enhancer.enhance(brightness_reduce_ratio)
 
-    # data_sample = resize_img(img=img_enhanced, new_size=out_put_img_size)
-    # mask = resize_img(img=result_bg, new_size=out_put_img_size)
+    data_sample = resize_img(img=img_enhanced, new_size=out_put_img_size)
+    mask = resize_img(img=result_bg, new_size=out_put_img_size)
 
-    img_enhanced.save(f"{out_dir}/data/{output_name}.png")
-    result_bg.save(f"{out_dir}/mask/{output_name}.png")
+    data_sample.save(f"{out_dir}/data/{output_name}.png")
+    mask.save(f"{out_dir}/mask/{output_name}.png")
 
 
 def get_ground_truth_quad(file_name: str):
