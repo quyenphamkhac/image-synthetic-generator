@@ -12,15 +12,16 @@ ID_CARD_PATH = 'train/id-cards'
 OUTPUT_IMAGE_PATH = 'export/data_sample'
 OUTPUT_MASK_PATH = 'export/ground_truth'
 GROUND_TRUTH_DIR = 'ground_truth'
-CARD_SAMPLE_WIDTH = 1280
-CARD_SAMPLE_HEIGHT = 814
 DATASET_PREFIX = ['DG', 'DX', 'LG', 'LX']
 VERSION = 31
 COUNT_ITEM = 30
-DELTA = 10
-SCALE_MIN = 70
-SCALE_MAX = 95
+DELTA = 10  # percent
+SCALE_MIN = 60  # percent, based on background image width
+SCALE_MAX = 80  # percent, based on background image width
+PADDING_TOP_BOTTOM = 20  # percent, based on background image height
+PADDING_LEFT_RIGHT = 10  # percent, based on background image width
 BRIGHTNESS_RANGE = (30, 150)
+# currently, only these file extensions are supported
 SUPPORTED_IMG_EXTENSIONS = ['png', 'jpeg', 'jpg']
 
 
@@ -55,10 +56,6 @@ def get_img_mask(img: Image.Image) -> Image.Image:
 def resize_img(img: Image.Image, new_size: tuple[int, int]) -> Image.Image:
     new_img = img.resize(new_size)
     return new_img
-
-
-def transform_img(img: Image.Image) -> Image.Image:
-    return
 
 
 def show_img(img: Image.Image) -> None:
